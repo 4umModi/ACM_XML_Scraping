@@ -154,17 +154,18 @@ def terminal_prompt():
                     inFullText = False
                     inAbstract = False
                     inKeywords = False
-                    inPaper = False
+                    
                     
                     #loops through all the keywords
                     for k in keys:
                         
+                        inPaper = False
                         #easier variable referencing
                         t = titles[count][0]
                         f = fulltexts[count][0]
                         a = abstracts[count][0]
                         keyword = keywords[count][0]
-                        inPaper = True
+                        
                         
                         #check string equiv with lower so it is case insensitive
                         if k.lower() in t.lower():
@@ -202,7 +203,7 @@ def terminal_prompt():
                             
                     #if it has a score, add article to list
                     #add data for new columns in arrays
-                    if (inPaper):
+                    if (inTitle or inFullText or inAbstract or inKeywords):
                         
                         #calculate score
                         score = 0
@@ -260,14 +261,14 @@ def terminal_prompt():
 
                 
                 #get data from database
-                if (isYear): data = pd.read_sql(("SELECT * FROM " + database + " WHERE CAST(publication_year AS INT) BETWEEN " + startYear + " AND " + endYear + " AND article_ids IN {}".format(tuple_ids)), connection)
+                if (isYear and not isConference): data = pd.read_sql(("SELECT * FROM " + database + " WHERE CAST(publication_year AS INT) BETWEEN " + startYear + " AND " + endYear + " AND article_ids IN {}".format(tuple_ids)), connection)
                 if (not isConference): data = pd.read_sql(("SELECT * FROM " + database + " WHERE article_ids IN {}".format(tuple_ids)), connection)
                 
             #conference search
             if (isConference):
                 
                 #get all publication acronyms or venues
-                if journal_type == "1": cursor.execute("SELECT publication_acronym FROM " + database)
+                if journal_type == "0": cursor.execute("SELECT publication_acronym FROM " + database)
                 else: cursor.execute("SELECT publication_venue FROM " + database)
                 
                 acronyms = cursor.fetchall()
@@ -294,20 +295,21 @@ def terminal_prompt():
                         #if journal, check if string contains another string
                         # journal names do not have acronym metadata, so must search entire
                         # journal title
-                        if (journal_type == "2"):
+                        if (journal_type == "1"):
                             if conf in a[0]:
                                 include_ids.append(ids[count][0])
                                 continue
                        
                         #if proceedings 
                         else:
-                    
+                            
                             #check if empty string
                             if not(a[0][c] == " " or a[0][c] == "'"): continue
                             acrm = a[0][0:c]
-    
+                            
                             #checks if matches conference acronym and prevent extended abstracts and other conferences by checking length
                             if (acrm == conf and len(a[0]) < len(acrm) + 5):
+
                                 include_ids.append(ids[count][0])
                                 continue
                             
